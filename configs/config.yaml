@@ -1,0 +1,34 @@
+# Customer Support Ticket Intelligence Configuration
+
+project:
+  name: customer-support-ticket-intelligence
+  version: 1.0.0
+
+data:
+  raw_path: data/raw/tickets.csv
+  processed_path: data/processed/tickets_cleaned.csv
+  test_size: 0.2
+  random_state: 42
+
+features:
+  max_features: 5000
+  ngram_range: [1, 2]
+  use_tfidf: true
+
+model:
+  name: text_classifier
+  type: random_forest  # Options: random_forest, logistic_regression, bert
+  hyperparameters:
+    n_estimators: 100
+    max_depth: 20
+  save_dir: models/
+  model_filename: ticket_classifier.pkl
+
+api:
+  host: 0.0.0.0
+  port: 8000
+  reload: true
+
+dashboard:
+  title: Support Ticket Intelligence Dashboard
+  theme: dark
