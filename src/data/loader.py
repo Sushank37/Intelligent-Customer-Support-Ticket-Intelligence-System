@@ -9,11 +9,11 @@ class DataLoader:
     """Class to handle reading raw and processed ticket data."""
 
     def __init__(self, raw_path: Optional[Union[str, Path]] = None):
-        self.raw_path = Path(raw_path) if raw_path else None
+        self.raw_path = (Path(raw_path) if raw_path else ("data/raw/dataset-tickets-multi-lang3-4k.csv"))
 
     def load_raw_data(self, filepath: Optional[Union[str, Path]] = None) -> pd.DataFrame:
         """Load raw CSV data into a pandas DataFrame."""
-        path = Path(filepath) if filepath else self.raw_path
+        path = Path(filepath) if filepath else Path(self.raw_path)
         if not path or not path.exists():
             raise FileNotFoundError(f"Raw data file not found at: {path}")
         return pd.read_csv(path)

@@ -1,29 +1,81 @@
-"""Ticket Classification Model Wrapper."""
+"""Ticket classification model using combined word and character TF-IDF."""
 
-from typing import List, Tuple, Any
+from typing import List, Any
+
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.pipeline import Pipeline
+from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import Pipeline, FeatureUnion
 
 
 class TicketClassifier:
-    """Wrapper pipeline for ticket category classification and priority assessment."""
+    """Combined TF-IDF + Logistic Regression classifier."""
 
-    def __init__(self, max_features: int = 5000, n_estimators: int = 100):
-        self.pipeline = Pipeline([
-            ("tfidf", TfidfVectorizer(max_features=max_features, stop_words="english")),
-            ("clf", RandomForestClassifier(n_estimators=n_estimators, random_state=42))
-        ])
+    def __init__(
+        self,
+        max_features: int = 10000,
+        C: float = 1.0,
+    ):
+        features = FeatureUnion(
+            [
+                (
+                    "word_tfidf",
+                    TfidfVectorizer(
+                        max_features=max_features,
+                        ngram_range=(1, 2),
+                        sublinear_tf=True,
+                    ),
+                ),
+                (
+                    "char_tfidf",
+                    TfidfVectorizer(
+                        analyzer="char",
+                        ngram_range=(3, 5),
+                        min_df=2,
+                        max_features=max_features,
+                        sublinear_tf=True,
+                    ),
+                ),
+            ]
+        )
+
+        self.pipeline = Pipeline(
+            [
+                ("features", features),
+                (
+                    "clf",
+                    LogisticRegression(
+                        C=C,
+                        max_iter=2000,
+                        class_weight="balanced",
+                        random_state=42,
+                    ),
+                ),
+            ]
+        )
 
     def fit(self, X: List[str], y: List[str]) -> "TicketClassifier":
-        """Train the classifier pipeline."""
+        """Train the classifier."""
         self.pipeline.fit(X, y)
         return self
 
     def predict(self, X: List[str]) -> List[str]:
-        """Predict ticket categories."""
+        """Predict class labels."""
         return self.pipeline.predict(X).tolist()
 
     def predict_proba(self, X: List[str]) -> Any:
-        """Predict category probabilities."""
+        """Predict class probabilities."""
         return self.pipeline.predict_proba(X)
+
+    def get_feature_names(self) -> List[str]:
+        """Return combined feature names."""
+        features = self.pipeline.named_steps["features"]
+
+        feature_names = []
+
+        for name, transformer in features.transformer_list:
+            names = transformer.get_feature_names_out()
+            feature_names.extend(
+                [f"{name}__{feature}" for feature in names]
+            )
+
+        return feature_names
